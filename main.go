@@ -46,8 +46,6 @@ func main() {
 		}
 	}
 
-	fmt.Println(sounds)
-
 	discord.AddHandler(messageCreate)
 
 	err := discord.Open()
@@ -80,7 +78,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		for _, vs := range g.VoiceStates {
 			if vs.UserID == m.Author.ID {
-				key := strings.Replace(m.Content, "!", "", 0)
+				key := strings.Replace(m.Content, "!", "", 1)
+				fmt.Println(keys, key, keys[key])
 				err = sounds[keys[key]].b.playSound(s, g.ID, vs.ChannelID)
 				if err != nil {
 					fmt.Println("Error playing sound:", err)

@@ -23,6 +23,7 @@ func loadSounds(key int) error {
 		fmt.Println("Error opening dca file :", err)
 		return err
 	}
+	fmt.Println("load file: ", key, sounds[key].path, file)
 
 	var opuslen int16
 
