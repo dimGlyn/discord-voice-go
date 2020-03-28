@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -14,9 +15,29 @@ import (
 )
 
 var (
-	Token  string
-	buffer = make([][]byte, 0)
+	Token string
 )
+
+type buffer [][]byte
+
+type sound struct {
+	b    buffer
+	path string
+}
+
+var dataPath = "data/"
+
+var sounds = []sound{
+	sound{make(buffer, 0), dataPath + "EEEEEEEEEEEEEEEEEEEEEE.dca"},
+	sound{make(buffer, 0), dataPath + "EIMAI_ENTAKSEI.dca"},
+	sound{make(buffer, 0), dataPath + "gamw_tis_katares.dca"},
+}
+
+var keys = map[string]int{
+	"ok":       0,
+	"entaksei": 1,
+	"gamw":     2,
+}
 
 func init() {
 	flag.StringVar(&Token, "t", "", "Bot Token")
@@ -26,16 +47,18 @@ func init() {
 func main() {
 	discord, _ := discordgo.New("Bot " + Token)
 
-	err := loadSound("data/EEEEEEEEEEEEEEEEEEEEEE.dca")
+	for _, val := range keys {
+		err := loadSounds(val)
 
-	if err != nil {
-		fmt.Println("error lol, ", err)
-		return
+		if err != nil {
+			fmt.Println("error lol, ", err)
+			return
+		}
 	}
 
 	discord.AddHandler(messageCreate)
 
-	err = discord.Open()
+	err := discord.Open()
 	if err != nil {
 		fmt.Println("error opening connection,", err)
 		return
@@ -53,7 +76,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	if m.Content == "!ok" || m.Content == "!entaksei" {
+
+	if m.Content == "!ok" || m.Content == "!entaksei" || m.Content == "!gamw" {
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 			return
@@ -64,7 +88,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		for _, vs := range g.VoiceStates {
 			if vs.UserID == m.Author.ID {
-				err = playSound(s, g.ID, vs.ChannelID)
+				key := strings.Replace(m.Content, "!", "", 0)
+				err = sounds[keys[key]].b.playSound(s, g.ID, vs.ChannelID)
 				if err != nil {
 					fmt.Println("Error playing sound:", err)
 				}
@@ -89,9 +114,8 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 	}
 }
 
-func loadSound(path string) error {
-
-	file, err := os.Open(path)
+func loadSounds(key int) error {
+	file, err := os.Open(sounds[key].path)
 	if err != nil {
 		fmt.Println("Error opening dca file :", err)
 		return err
@@ -122,11 +146,11 @@ func loadSound(path string) error {
 			return err
 		}
 
-		buffer = append(buffer, InBuf)
+		sounds[key].b = append(sounds[key].b, InBuf)
 	}
 }
 
-func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
+func (b buffer) playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 	vc, err := s.ChannelVoiceJoin(guildID, channelID, false, true)
 	if err != nil {
 		return err
@@ -134,7 +158,7 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 	time.Sleep(250 * time.Millisecond)
 
 	vc.Speaking(true)
-	for _, buff := range buffer {
+	for _, buff := range b {
 		vc.OpusSend <- buff
 	}
 	vc.Speaking(false)
