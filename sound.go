@@ -17,6 +17,22 @@ type sound struct {
 	path string
 }
 
+type keyword string
+
+var sounds = []sound{
+	sound{make(buffer, 0), dataPath + "EEEEEEEEEEEEEEEEEEEEEE.dca"},
+	sound{make(buffer, 0), dataPath + "EIMAI_ENTAKSEI.dca"},
+	sound{make(buffer, 0), dataPath + "gamw_tis_katares.dca"},
+	sound{make(buffer, 0), dataPath + "re_fyge.dca"},
+}
+
+var keywordSound = map[keyword]*sound{
+	"ok":       &sounds[0],
+	"entaksei": &sounds[1],
+	"gamw":     &sounds[2],
+	"fyge":     &sounds[3],
+}
+
 func loadSounds(key int) error {
 	file, err := os.Open(sounds[key].path)
 	if err != nil {
@@ -54,15 +70,15 @@ func loadSounds(key int) error {
 	}
 }
 
-func (b buffer) playSound(s *discordgo.Session, guildID, channelID string) (err error) {
-	vc, err := s.ChannelVoiceJoin(guildID, channelID, false, true)
+func (s sound) playSound(session *discordgo.Session, guildID, channelID string) (err error) {
+	vc, err := session.ChannelVoiceJoin(guildID, channelID, false, true)
 	if err != nil {
 		return err
 	}
 	time.Sleep(250 * time.Millisecond)
 
 	vc.Speaking(true)
-	for _, buff := range b {
+	for _, buff := range s.b {
 		vc.OpusSend <- buff
 	}
 	vc.Speaking(false)
@@ -71,4 +87,18 @@ func (b buffer) playSound(s *discordgo.Session, guildID, channelID string) (err 
 	vc.Disconnect()
 
 	return nil
+}
+
+func synonym(word string) keyword {
+	switch word {
+	case "!ok", "!okey", "!e", "!ee", "!eee":
+		return "ok"
+	case "!entaksei", "!eimaidaksei", "!daksei":
+		return "entaksei"
+	case "!fyge", "!fige", "!refigeremalakapodorebro":
+		return "fyge"
+	case "!gamw", "!katares", "!manoules":
+		return "gamw"
+	}
+	return ""
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -16,13 +15,6 @@ var (
 )
 
 var dataPath = "data/"
-
-var sounds = []sound{
-	sound{make(buffer, 0), dataPath + "EEEEEEEEEEEEEEEEEEEEEE.dca"},
-	sound{make(buffer, 0), dataPath + "EIMAI_ENTAKSEI.dca"},
-	sound{make(buffer, 0), dataPath + "gamw_tis_katares.dca"},
-	sound{make(buffer, 0), dataPath + "re_fyge.dca"},
-}
 
 var keys = map[string]int{
 	"ok":       0,
@@ -69,7 +61,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if m.Content == "!ok" || m.Content == "!entaksei" || m.Content == "!gamw" || m.Content == "!fyge" {
+	if word := synonym(m.Content); word != "" {
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 			return
@@ -80,9 +72,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		for _, vs := range g.VoiceStates {
 			if vs.UserID == m.Author.ID {
-				key := strings.Replace(m.Content, "!", "", 1)
-				fmt.Println(keys, key, keys[key])
-				err = sounds[keys[key]].b.playSound(s, g.ID, vs.ChannelID)
+				err = keywordSound[word].playSound(s, g.ID, vs.ChannelID)
 				if err != nil {
 					fmt.Println("Error playing sound:", err)
 				}
