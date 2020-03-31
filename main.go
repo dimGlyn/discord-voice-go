@@ -21,12 +21,14 @@ var sounds = []sound{
 	sound{make(buffer, 0), dataPath + "EEEEEEEEEEEEEEEEEEEEEE.dca"},
 	sound{make(buffer, 0), dataPath + "EIMAI_ENTAKSEI.dca"},
 	sound{make(buffer, 0), dataPath + "gamw_tis_katares.dca"},
+	sound{make(buffer, 0), dataPath + "re_fyge.dca"},
 }
 
 var keys = map[string]int{
 	"ok":       0,
 	"entaksei": 1,
 	"gamw":     2,
+	"fyge":     3,
 }
 
 func init() {
@@ -67,7 +69,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if m.Content == "!ok" || m.Content == "!entaksei" || m.Content == "!gamw" {
+	if m.Content == "!ok" || m.Content == "!entaksei" || m.Content == "!gamw" || m.Content == "!fyge" {
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 			return
